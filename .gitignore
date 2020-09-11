@@ -1,10 +1,10 @@
 # App
-build/*
-cache/*
-config/secrets.jl
-docs/build
-log/*
-session/*
+backend/build/*
+backend/cache/*
+backend/config/secrets.jl
+backend/docs/build
+backend/logs/*
+backend/session/*
 !*.gitkeep
 Manifest.toml
 
