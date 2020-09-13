@@ -41,4 +41,15 @@ Thumbs.db
 # NPM packages folder.
 node_modules/
 
+# reason
+*.bs.js
+.merlin
+.bsb.lock
+npm-debug.log
+/frontend/lib/bs/
+/frontend/bundleOutput/
+
+
+# notebook
 .ipynb_checkpoints
+

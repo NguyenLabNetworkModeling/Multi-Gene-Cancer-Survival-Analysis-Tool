@@ -32,6 +32,8 @@ open(study_log_file, "w") do f
         write(f, "study_id, valid, survival_outcome, survival_measure, num_patients\n")
         for study in studies
             study_id = study["studyId"]
+            study_description = study["description"]
+            study_name = study["name"]
             try
                 clinicaldata = CBioPortal.get_clinicaldata(Dict("study_id" => study_id))
                 preprocessed, outcome, measure = CBioPortal.preprocess_clinicaldata(clinicaldata)
@@ -42,7 +44,7 @@ open(study_log_file, "w") do f
                     if !isnothing(mrnaprofiles) && length(mrnaprofiles) > 0
                         preprocessed.STUDY_ID = study_id
                         push!(valid_studies, preprocessed)
-                        push!(valid_study_survival_type, [study_id, outcome, measure])
+                        push!(valid_study_survival_type, [study_id, study_name, study_description, outcome, measure])
                         for p in mrnaprofiles 
                             name = get(p, "name", "(Unknown name)")
                             profileId = get(p, "molecularProfileId", "(Unknown ID")
@@ -65,7 +67,7 @@ open(study_log_file, "w") do f
 end
 # make proper data tables
 table_clinical_data = vcat(valid_studies...) 
-table_survival_meta = DataFrame(permutedims(hcat(valid_study_survival_type...)), [:STUDY_ID, :SURVIVAL_OUTCOME, :SURVIVAL_TIME_UNIT]) 
+table_survival_meta = DataFrame(permutedims(hcat(valid_study_survival_type...)), [:ID, :NAME, :DESCRIPTION, :SURVIVAL_OUTCOME, :SURVIVAL_TIME_UNIT]) 
 table_study_profiles = DataFrame(permutedims(hcat(valid_study_molecular_profiles...)), [:STUDY_ID, :PROFILE_ID, :NAME, :DESCRIPTION, :DATATYPE]) 
 # write to db
 db_clinical_data = table_clinical_data |> SQLite.load!(db, "clinical_data") # write clinical data to db

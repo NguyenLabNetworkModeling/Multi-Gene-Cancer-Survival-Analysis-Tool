@@ -35,7 +35,7 @@ function preprocess_studies(survival_meta, survival_profiles)
     end
     profiles = []
     for profilerow in eachrow(survival_profiles)
-      if metarow["STUDY_ID"] == profilerow["STUDY_ID"]
+      if metarow["ID"] == profilerow["STUDY_ID"]
         profileobj = Dict{String, Any}()
         for profilecol in profileprops
           push!(profileobj, string(profilecol) => profilerow[profilecol])
@@ -71,7 +71,8 @@ end
 "Search genes for all genes with HUGO ID starting with prefix."
 function search_genes(genedict, prefix)
   filtered = filter(d -> startswith(lowercase(d["hugo"]), prefix), dict_genes)
-  return json(filtered)
+  results = Dict("query" => prefix, "results" => filtered)
+  return json(results)
 end
 
 """List genes with a given prefix.
@@ -115,6 +116,6 @@ route("/gene/check") do
         break
       end
     end
-    return json(Dict("valid" => valid))
+    return json(Dict("valid" => valid, "query" => hugo))
   end
 end
