@@ -38,7 +38,7 @@ end
 
 "Preprocess retrieved clinical data (converts response JSON => DataFrame)."
 function preprocess_clinicaldata(response)
-    
+
     # Initialise df for all clinical data
     patient_df = DataFrame(
         PATIENT_ID=String[],
@@ -49,7 +49,7 @@ function preprocess_clinicaldata(response)
         DFS_MONTHS=Union{Float64,Missing}[],
         DAYS_TO_LAST_FOLLOWUP_OR_DEATH=Union{Float64,Missing}[],
     )
-    
+
     # Fill temporary dict to accumulate clinical data keyed by patient ID
     patient_dict = Dict()
     keys = Set(["VITAL_STATUS", "OS_STATUS", "OS_MONTHS", "DFS_STATUS", "DFS_MONTHS", "DAYS_TO_LAST_FOLLOWUP", "DAYS_TO_DEATH"])
@@ -58,13 +58,13 @@ function preprocess_clinicaldata(response)
         clinical_attribute = object["clinicalAttributeId"]
         if clinical_attribute in keys
             object_patient_id = object["patientId"]
-            
+
             if clinical_attribute in floats
                 value = parse(Float64, object["value"])
             else
                 value = object["value"]
             end
-            
+
             if haskey(patient_dict, object_patient_id)
                 patient_dict[object_patient_id][clinical_attribute] = value
             else
@@ -72,10 +72,10 @@ function preprocess_clinicaldata(response)
             end
         end
     end
-    
+
     # Fill dataframe with patient rows
     for (patient_id, attributes) in patient_dict
-        
+
         if haskey(attributes, "DAYS_TO_LAST_FOLLOWUP")
             days_to_last_followup_or_death = attributes["DAYS_TO_LAST_FOLLOWUP"]
         elseif haskey(attributes, "DAYS_TO_DEATH")
@@ -83,19 +83,19 @@ function preprocess_clinicaldata(response)
         else
             days_to_last_followup_or_death = missing
         end
-        
+
         new_patient = [
             patient_id,
             get(attributes, "VITAL_STATUS", missing),
-            get(attributes, "OS_STATUS", missing),     
-            get(attributes, "OS_MONTHS", missing),  
-            get(attributes, "DFS_STATUS", missing),  
-            get(attributes, "DFS_MONTHS", missing),  
-            days_to_last_followup_or_death,  
+            get(attributes, "OS_STATUS", missing),
+            get(attributes, "OS_MONTHS", missing),
+            get(attributes, "DFS_STATUS", missing),
+            get(attributes, "DFS_MONTHS", missing),
+            days_to_last_followup_or_death,
         ]
         push!(patient_df, new_patient)
         end
-    
+
     # choose combination of status and time
     df_os = dropmissing(patient_df[:, [:PATIENT_ID, :OS_STATUS, :OS_MONTHS]])
     num_os = size(df_os)[1]
@@ -103,7 +103,7 @@ function preprocess_clinicaldata(response)
     num_os_days = size(df_os_days)[1]
     df_dfs = dropmissing(patient_df[:, [:PATIENT_ID, :DFS_STATUS, :DFS_MONTHS]])
     num_dfs = size(df_dfs)[1]
-    
+
     # Status of 0 indicates right-censor, 1 indicates event (e.g. death)
     function tostatus(string)
         if contains(string, "0")
@@ -114,7 +114,7 @@ function preprocess_clinicaldata(response)
             throw("Unknown status string.")
         end
     end
-    
+
     # Return the combination with the most data points
     most_data = max(num_os, num_os_days, num_dfs)
     if num_os == most_data
@@ -139,6 +139,15 @@ end
 "Retrieve molecular profiles as JSON."
 function get_molecularprofiles(config)
     return portal_request_get("/studies/$(config["study_id"])/molecular-profiles")
+end
+
+"Get data for a specified molecular profile."
+function get_moleculardata(config)
+    body = Dict(
+        "entrezGeneIds" => [gene["entrez"] for gene in config["genes"]],
+        "molecularProfileIds" => [config["molecular_profile_id"]]
+    )
+    return CBioPortal.portal_request_post("/molecular-data/fetch", body)
 end
 
 

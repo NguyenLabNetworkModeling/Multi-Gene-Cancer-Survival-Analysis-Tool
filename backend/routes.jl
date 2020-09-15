@@ -1,7 +1,9 @@
 using Genie.Router
 using Genie.Renderer.Json
 using Genie.Responses
+using Genie.Requests
 using SQLite, DataFrames
+using Analysis
 
 # Load all available data
 db = SQLite.DB("./app/data/db.db")
@@ -94,28 +96,32 @@ route("/gene") do
   end
 end
 
-"""Check whether a string is a valid HUGO gene ID.
+#= Performs main analysis given a JSON config body.
 
-Query args:
-- hugo (String): HUGO gene symbol to validate.
+Example post body:
 
-Returns:
-- object with type {"valid": boolean}
+    {
+        "study_id": "brca_tcga_pub2015",
+        "molecular_profile_id": "brca_tcga_pub2015_rna_seq_v2_mrna",
+        "genes": [
+            { "hugo": "BRCA1",
+              "entrez": 672,
+              "side": "above",
+              "percentile": 75,
+              "control_type": "mirrored"
+            },
+            { "hugo": "BRCA2",
+              "entrez": 675,
+              "side": "above",
+              "percentile": 75,
+              "control_type": "complement"
+            }
+        ]
+    }
 
-TODO Return proper HTTP error rather than message object (check the docs when updated)
-"""
-route("/gene/check") do 
-  hugo = haskey(@params, :hugo) ? @params(:hugo) : nothing
-  if isnothing(hugo)
-    return json(Dict("message" => "You must have a 'hugo' parameter with the gene you wish to check."), status=422)
-  else
-    valid = false
-    for gene in genedict
-      if gene["hugo"] == hugo 
-        valid = true
-        break
-      end
-    end
-    return json(Dict("valid" => valid, "query" => hugo))
-  end
+=#
+route("/analysis", method=POST) do
+    config = jsonpayload()
+    results = Analysis.perform_survival_analysis(config, clinical_data, survival_meta)
+    return json(results)
 end
