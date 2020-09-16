@@ -1,0 +1,273 @@
+/* Modules */
+
+@use "sass:color"
+
+/* Variables */
+
+$gray: gray
+$white: white
+$black: black
+$orange: orange
+$yellow: yellow
+$blue: steelblue
+
+/* HTML5 elements */
+
+*
+  box-sizing: border-box
+  margin: 0
+  padding: 0
+  border: none
+  background: none
+  font-family: inherit
+
+html
+  margin: 0
+  padding: 0
+  font-family: "Charter", "Georgia", "EB Garamond", serif
+
+body
+  margin: 0
+  padding: 0
+
+a
+  color: inherit
+  &:hover
+    color: $gray
+  &:active
+    color: color.scale($gray, $lightness: 60%)
+
+h1, h2, h3, h4, h5, h6
+  font-size: inherit
+  font-weight: inherit
+
+input, button, select
+  width: auto
+  font-size: inherit
+
+input, select
+  border-bottom: 2px solid color.scale($orange, $lightness: 10%)
+  background: color.scale($gray, $lightness: 90%)
+  &:focus
+    background: color.scale($yellow, $lightness: 80%, $saturation: -20%)
+  &:disabled
+    background: color.scale($gray, $lightness: 80%)
+
+
+/* Utility classes */
+
+.screen
+  height: 100vh
+  display: flex
+  align-items: center
+  justify-content: center
+
+.circled
+  border: 1px solid $black
+  padding: 1px 5px
+  border-radius: 999px
+  margin-right: 0.5rem
+  font-size: 0.7rem
+
+.orange
+  color: $orange
+
+.blue
+  color: $blue
+
+/* Major component classes */
+
+.config-interface
+  min-height: 400px
+  min-width: 720px
+  width: 100%
+  height: 100%
+  max-width: 1280px
+  max-height: 700px
+  display: flex
+  flex-direction: column
+
+  .header
+    .title
+      font-size: 2.5rem
+      font-weight: bold
+    .subtitle
+      font-size: 1em
+      font-style: italic
+
+  .body
+    margin-top: 1.5rem
+    display: flex
+    flex-direction: column
+    font-size: 1.1rem
+    line-height: 1.5
+    flex-grow:  1
+    .top
+      display: flex
+      flex-grow: 1
+      .search-result
+        border-bottom: 1px solid color.scale($gray, $lightness: 80%)
+        background: $white
+        width: 100%
+        padding: 4px 5px
+        display: flex
+        flex-direction: column
+        text-align: left
+        &:focus
+          background: color.scale($gray, $lightness: 80%)
+        &:hover
+          background: color.scale($orange, $lightness: 80%)
+          cursor: pointer
+        .major
+          font-weight: bold
+        .minor
+          font-size: 0.8em
+          color: $gray
+      .tagline
+        font-weight: bold
+        font-style: italic
+        display: flex
+        align-items: center
+      .left
+        width: 33%
+        margin-right: 2rem
+      .right
+        width: 67%
+    .bottom
+      display: flex
+      justify-content: center
+
+
+.study-input-container, .gene-input-container
+  #study-selector, #gene-selector
+    margin-top: 0.5rem
+    width: 100%
+    padding: 5px 10px
+    transition: 0.2s all
+  #study-results, #gene-results
+    position: relative
+    width: 100%
+    font-size: 0.95em
+    z-index: 20
+    #study-results-absolute, #gene-results-absolute
+      position: absolute
+      overflow: auto
+      max-height: 50vh
+      width: 100%
+      box-shadow: 0 0 5px 0px color.scale($gray, $lightness: 70%)
+
+#chosen-study
+  margin-top: 1.5rem
+  font-size: 0.9em
+  .study-name
+    font-weight: bold
+    font-size: 1.2em
+  .study-id
+    color: $gray
+    font-size: 0.8em
+  .study-body
+    margin-top: 1rem
+  .study-description
+    margin-top: 1rem
+  .study-description-quote
+    margin-top: 1rem
+    border-left: 1px dotted $black
+    padding-left: 1rem
+  .profile-select
+    display: inline
+    max-width: 75%
+    margin-top: 5px
+
+#all-gene-config
+  display: flex
+  flex-direction: column
+  overflow: auto
+  .all-gene-statement
+    margin-top: 1.5rem
+    font-style: italic
+  .second-gene-statement
+    font-style: italic
+    margin-bottom: 1em
+
+.single-gene-config
+  display: flex
+  border-bottom: 1px dotted color.scale($gray, $lightness: 60%)
+  padding: 0.5rem 0
+  font-size: 0.9em
+  .gene-left
+    width: 70%
+    display: flex
+    .gene-hugo
+      margin-right: 1rem
+      width: 12%
+      font-weight: bold
+    .side-select
+      margin-right: 1rem
+      width: 13%
+      text-align: center
+    .gene-the
+      width: 5%
+    .gene-threshold
+      width: auto
+      width: 10%
+      text-align: center
+      margin-right: 0.5em
+    .quantile
+      width: 25%
+      text-align: center
+    .control-type-select
+      width: 20%
+      margin-right: 0.5em
+      text-align: center
+    .controls
+      width: 10%
+      margin-right: 0.5em
+  .gene-right
+    width: 25%
+    display: flex
+    position: relative
+    .gene-slider
+      width: 100%
+    .shading-test
+      position: absolute
+      height: 1.6rem
+      background: color.scale($orange, $lightness: 50%)
+      z-index: -10
+    .shading-neutral
+      position: absolute
+      height: 1.6rem
+      background: color.scale($gray, $lightness: 95%)
+      z-index: -10
+    .shading-control
+      position: absolute
+      height: 1.6rem
+      background: color.scale($blue, $lightness: 80%)
+      z-index: -10
+  .gene-end
+    display: flex
+    justify-content: flex-end
+    button
+      width: 5%
+      height: 100%
+      font-weight: bold
+      font-size: 1.2rem
+      &:hover
+        color: $orange
+        cursor: pointer
+
+.submit-button
+  padding: 1rem
+  margin-top: 2rem
+  margin-bottom: 2rem
+  width: 100%
+  border-bottom: 2px solid $orange
+  color: $black
+  background: color.scale($orange, $lightness: 90%)
+  cursor: pointer
+  &:hover
+    background: color.scale($yellow, $lightness: 80%, $saturation: -20%)
+  &:disabled
+    cursor: auto
+    color: $black
+    background: $white
+    border: 1px solid $black

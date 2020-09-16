@@ -1,29 +1,15 @@
-module Api exposing (RemoteData(..), getStudies, getGenes, checkGene)
+module Api exposing (checkGene, getGenes, getStudies, submitAnalysis)
 
 {-| API interface.
 -}
 
+import Analysis exposing (Analysis)
+import Config exposing (Config)
 import Gene
-import Http exposing (Error)
+import Http exposing (Error(..))
+import RemoteData exposing (RemoteData(..))
 import Study exposing (Study)
 import Url.Builder as Builder exposing (crossOrigin)
-
-
-type RemoteData a
-    = NotAsked
-    | Loading
-    | Success a
-    | Failure Error
-
-
-resultToRemoteData : Result Error a -> RemoteData a
-resultToRemoteData result =
-    case result of
-        Ok data ->
-            Success data
-
-        Err e ->
-            Failure e
 
 
 {-| API endpoints in the backend.
@@ -37,6 +23,7 @@ type Endpoint
     = GetStudies
     | SearchGenes String
     | CheckGene String
+    | SubmitAnalysis Config
 
 
 {-| Backend API base URL.
@@ -61,6 +48,9 @@ endpointToUrl endpoint =
 
                 CheckGene hugo ->
                     ( [ "gene", "check" ], [ Builder.string "hugo" hugo ] )
+
+                SubmitAnalysis config ->
+                    ( [ "analysis" ], [] )
     in
     crossOrigin baseUrl paths queries
 
@@ -71,7 +61,7 @@ getStudies : (RemoteData (List Study) -> msg) -> Cmd msg
 getStudies callback =
     Http.get
         { url = endpointToUrl GetStudies
-        , expect = Http.expectJson (resultToRemoteData >> callback) Study.decoderList
+        , expect = Http.expectJson (RemoteData.fromResult >> callback) Study.decoderList
         }
 
 
@@ -81,7 +71,7 @@ getGenes : String -> (String -> RemoteData Gene.Results -> msg) -> Cmd msg
 getGenes prefix callback =
     Http.get
         { url = endpointToUrl (SearchGenes prefix)
-        , expect = Http.expectJson (resultToRemoteData >> callback prefix) Gene.decoderResults
+        , expect = Http.expectJson (RemoteData.fromResult >> callback prefix) Gene.decoderResults
         }
 
 
@@ -91,5 +81,18 @@ checkGene : String -> (String -> RemoteData Gene.Validity -> msg) -> Cmd msg
 checkGene hugo callback =
     Http.get
         { url = endpointToUrl (CheckGene hugo)
-        , expect = Http.expectJson (resultToRemoteData >> callback hugo) Gene.decoderValidity
+        , expect = Http.expectJson (RemoteData.fromResult >> callback hugo) Gene.decoderValidity
         }
+
+
+submitAnalysis : Config -> (Config -> RemoteData Analysis -> msg) -> Cmd msg
+submitAnalysis config callback =
+    Cmd.none
+
+
+
+{-
+   Http.post
+       { url = endpointToUrl (SubmitAnalysis config)
+       , expect = Http.expectJson (An)}
+-}

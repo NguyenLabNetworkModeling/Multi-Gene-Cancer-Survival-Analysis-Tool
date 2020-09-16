@@ -25,3 +25,8 @@ decoder =
 decoderList : Decoder (List Profile)
 decoderList =
     Decode.list decoder
+
+
+isNotZScore : Profile -> Bool
+isNotZScore profile =
+    profile.datatype /= "Z-SCORE"

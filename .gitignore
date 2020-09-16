@@ -45,6 +45,7 @@ node_modules/
 elm-stuff
 output.css
 styles.css
+*.css.map
 
 # notebook
 .ipynb_checkpoints
