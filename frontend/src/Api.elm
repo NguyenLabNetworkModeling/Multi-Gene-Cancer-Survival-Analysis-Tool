@@ -30,7 +30,7 @@ type Endpoint
 -}
 baseUrl : String
 baseUrl =
-    "http://127.0.0.1:8080"
+    ""
 
 
 {-| Convert an endpoint to a URL.

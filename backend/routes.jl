@@ -59,9 +59,11 @@ const json_studies = json(preprocess_studies(survival_meta, survival_profiles))
 const dict_genes = dftodict(genes)
 filter!(x -> !isempty(x["entrez"]), dict_genes)
 
-# route("/") do
-#   serve("public", 8888)
-# end
+
+route("/") do
+    serve_static_file("index.html")
+end
+
 
 """List all valid studies.
 """

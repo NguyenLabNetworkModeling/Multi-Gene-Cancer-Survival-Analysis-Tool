@@ -298,10 +298,10 @@ input, select
   display: flex
   justify-content: center
   align-items: center
-  opacity: 0
+  opacity: 0.0
   pointer-events: none
   &.visible
-    opacity: 100%
+    opacity: 1.0
     pointer-events: auto
 
 #analysis-modal
@@ -313,7 +313,7 @@ input, select
   max-width: 90vw
   max-height: 90vh
   background: $white
-  opacity: 0
+  opacity: 0.0
   display: none
   transition: 0.2s all
   flex-direction: column
@@ -335,7 +335,7 @@ input, select
         background: color.scale($gray, $lightness: 50%)
   &.visible
     display: flex
-    opacity: 1
+    opacity: 1.0
 
 
 #analysis-loading
@@ -343,7 +343,7 @@ input, select
   height: 100%
   align-items: center
   justify-content: center
-  opacity: 0
+  opacity: 0.0
   display: none
   transition: 0.2s all
   background: $white
@@ -351,19 +351,19 @@ input, select
   font-style: italic
   &.visible
     display: flex
-    opacity: 1
+    opacity: 1.0
     div:after
       content: "Loading...this may take several moments."
 
 #analysis-loaded
   width: 100%
   height: 100%
-  opacity: 0
+  opacity: 0.0
   display: none
   transition: 0.2s all
   &.visible
     display: flex
-    opacity: 1
+    opacity: 1.0
 
   #analysis-left 
     width: 50%
