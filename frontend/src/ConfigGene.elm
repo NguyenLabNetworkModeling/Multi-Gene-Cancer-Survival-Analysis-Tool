@@ -34,9 +34,9 @@ encode : ConfigGene -> Value
 encode gene =
     Encode.object
         [ ( "hugo", Encode.string gene.gene.hugo )
-        , ( "entrez", Encode.string gene.gene.entrez )
+        , ( "entrez", Encode.int (String.toInt gene.gene.entrez |> Maybe.withDefault 0) )
         , ( "side", Enum.encode Side.enum gene.side )
-        , ( "threshold", Encode.int gene.threshold )
+        , ( "percentile", Encode.int gene.threshold )
         , ( "control_type", Enum.encode ControlType.enum gene.controlType )
         ]
 

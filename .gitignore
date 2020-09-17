@@ -46,6 +46,7 @@ elm-stuff
 output.css
 styles.css
 *.css.map
+build
 
 # notebook
 .ipynb_checkpoints

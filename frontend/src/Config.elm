@@ -4,6 +4,7 @@ import ConfigGene exposing (ConfigGene)
 import ControlType exposing (ControlType)
 import Dict exposing (Dict)
 import Gene exposing (Gene)
+import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode exposing (Value)
 import Profile exposing (Profile)
 import Side exposing (Side)
@@ -118,5 +119,26 @@ encode config =
     Encode.object
         [ ( "study_id", Encode.string config.study.id )
         , ( "molecular_profile_id", Encode.string config.profile.id )
+        , ( "genes", Encode.list ConfigGene.encode config.genes )
+        ]
+
+
+{-| encoding for analysis metadata
+-}
+encodeMeta : Config -> Value
+encodeMeta config =
+    let
+        xLabel =
+            "Time (" ++ String.toLower config.study.survivalTimeUnits ++ ")"
+
+        yLabel =
+            config.study.survivalOutcome ++ " (%)"
+    in
+    Encode.object
+        [ ( "x_label", Encode.string xLabel )
+        , ( "y_label", Encode.string yLabel )
+        , ( "study_name", Encode.string config.study.name )
+        , ( "study_id", Encode.string config.study.id )
+        , ( "profile_name", Encode.string config.profile.name )
         , ( "genes", Encode.list ConfigGene.encode config.genes )
         ]

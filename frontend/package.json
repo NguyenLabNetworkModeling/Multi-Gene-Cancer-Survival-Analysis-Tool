@@ -2,5 +2,8 @@
     "name": "multi-gene-tool",
     "scripts": {
         "watch-css": "sass --watch src/styles.sass src/styles.css"
+    },
+    "devDependencies": {
+        "chart.js": "^2.9.3"
     }
 }

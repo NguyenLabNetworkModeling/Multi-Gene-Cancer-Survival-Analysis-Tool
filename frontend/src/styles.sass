@@ -24,11 +24,12 @@ $blue: steelblue
 html
   margin: 0
   padding: 0
-  font-family: "Charter", "Georgia", "EB Garamond", serif
+  font-family: "Palatino Linotype", Constantia, "Lucida Bright", Lucidabright, "Lucida Serif", Lucida, "DejaVu Serif", "Bitstream Vera Serif", "Liberation Serif", Georgia, serif
 
 body
   margin: 0
   padding: 0
+  position: relative
 
 a
   color: inherit
@@ -102,9 +103,12 @@ input, select
     font-size: 1.1rem
     line-height: 1.5
     flex-grow:  1
+    overflow: auto
     .top
       display: flex
       flex-grow: 1
+      margin-bottom: 1rem
+      overflow: auto
       .search-result
         border-bottom: 1px solid color.scale($gray, $lightness: 80%)
         background: $white
@@ -131,6 +135,9 @@ input, select
       .left
         width: 33%
         margin-right: 2rem
+        display: flex
+        flex-direction: column
+        overflow: auto
       .right
         width: 67%
     .bottom
@@ -152,13 +159,23 @@ input, select
     #study-results-absolute, #gene-results-absolute
       position: absolute
       overflow: auto
-      max-height: 50vh
+      max-height: 40vh
       width: 100%
+      border-left: 1px solid $orange
+      border-right: 1px solid $orange
+      border-bottom: 1px solid $orange
       box-shadow: 0 0 5px 0px color.scale($gray, $lightness: 70%)
 
+
+.chosen-study-container
+  flex-grow: 1
+  padding: 1rem 0
+  overflow: auto
+
 #chosen-study
-  margin-top: 1.5rem
   font-size: 0.9em
+  height: 100%
+  overflow: auto
   .study-name
     font-weight: bold
     font-size: 1.2em
@@ -257,7 +274,7 @@ input, select
 
 .submit-button
   padding: 1rem
-  margin-top: 2rem
+  margin-top: auto
   margin-bottom: 2rem
   width: 100%
   border-bottom: 2px solid $orange
@@ -271,3 +288,117 @@ input, select
     color: $black
     background: $white
     border: 1px solid $black
+
+#analysis-modal-background
+  position: absolute
+  height: 100vh
+  width: 100vw
+  top: 0
+  left: 0
+  display: flex
+  justify-content: center
+  align-items: center
+  opacity: 0
+  pointer-events: none
+  &.visible
+    opacity: 100%
+    pointer-events: auto
+
+#analysis-modal
+  box-shadow: 0 0 10px $gray
+  min-height: 480px
+  min-width: 720px
+  width: 100%
+  height: 100%
+  max-width: 90vw
+  max-height: 90vh
+  background: $white
+  opacity: 0
+  display: none
+  transition: 0.2s all
+  flex-direction: column
+  position: relative
+  z-index: 100
+  #analysis-header
+    position: absolute
+    top: 0
+    left: 0
+    width: 100%
+    display: flex
+    justify-content: flex-end
+    font-size: 3rem
+    #analysis-header-close-button
+      font-weight: bold
+      padding: 0 1.5rem
+      cursor: pointer
+      &:hover 
+        background: color.scale($gray, $lightness: 50%)
+  &.visible
+    display: flex
+    opacity: 1
+
+
+#analysis-loading
+  width: 100%
+  height: 100%
+  align-items: center
+  justify-content: center
+  opacity: 0
+  display: none
+  transition: 0.2s all
+  background: $white
+  font-size: 2rem
+  font-style: italic
+  &.visible
+    display: flex
+    opacity: 1
+    div:after
+      content: "Loading...this may take several moments."
+
+#analysis-loaded
+  width: 100%
+  height: 100%
+  opacity: 0
+  display: none
+  transition: 0.2s all
+  &.visible
+    display: flex
+    opacity: 1
+
+  #analysis-left 
+    width: 50%
+    height: 100%
+  #analysis-right
+    width: 50%
+    height: 100%
+    display: flex
+    justify-content: center
+    align-items: center
+    padding: 3rem
+
+#analysis-left
+  padding: 3rem
+  line-height: 1.5
+  #analysis-study-name
+    font-weight: bold
+    font-size: 2rem
+  #analysis-study-id
+    color: $gray
+    font-style: italic
+  #analysis-study-text 
+    max-width: 600px
+    margin-top: 2rem
+    p 
+      margin: 1rem 0
+    ul
+      padding-left: 2rem
+      list-style-type: circle 
+    #analysis-molecular-profile
+      font-weight: bold
+    #analysis-num-available, #analysis-num-control, #analysis-num-test
+      font-weight: bold
+    #analysis-event-type, #analysis-event-time-units
+      text-transform: lowercase
+      font-weight: bold
+    #analysis-hazard-ratio, #analysis-p-value
+      font-weight: bold

@@ -27,6 +27,7 @@ type Msg
     | ChangedGeneThreshold Gene Side Int
     | ClickedDeleteGene Gene
     | Tick String
-    | ClickedSubmit Config
-    | GotAnalysis Config (RemoteData Analysis)
+    | ClickedSubmitAnalysis
+    | GotAnalysis Config (RemoteData String)
+    | ClosedAnalysisModal ()
     | NoOp

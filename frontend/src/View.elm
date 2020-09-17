@@ -46,7 +46,7 @@ view model =
                         [ article [ class "left" ]
                             [ h1 [ class "tagline" ] [ div [ class "circled" ] [ text "1" ], div [] [ text "Analyse this study..." ] ]
                             , viewInputStudy model
-                            , div [] [ viewChosenStudy model ]
+                            , div [ class "chosen-study-container" ] [ viewChosenStudy model ]
                             ]
                         , article [ class "right" ]
                             [ h1 [ class "tagline" ] [ div [ class "circled" ] [ text "2" ], div [] [ text "For this gene combination..." ] ]
@@ -184,7 +184,7 @@ viewChosenStudy model =
                 ]
 
         Nothing ->
-            article [] []
+            article [ id "chosen-study" ] []
 
 
 viewProfileSelect : Model -> Html Msg
@@ -282,7 +282,7 @@ viewSingleGeneConfig _ gene =
                 , onInput (\s -> ChangedGeneThreshold gene.gene gene.side (String.toInt s |> Maybe.withDefault 50))
                 ]
                 []
-            , div [ class "quantile" ] [ text "-th quantile, with" ]
+            , div [ class "quantile" ] [ text "-th percentile, with" ]
             , viewControlTypeSelect gene
             , div [ class "controls" ] [ text "controls." ]
             ]
@@ -403,7 +403,7 @@ viewSubmitButton model =
         Just config ->
             button
                 [ class "submit-button"
-                , onClick (ClickedSubmit config)
+                , onClick ClickedSubmitAnalysis
                 ]
                 [ text "Submit for Analysis" ]
 

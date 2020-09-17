@@ -1,4 +1,4 @@
-module Update exposing (..)
+port module Update exposing (..)
 
 import Api
 import Browser
@@ -9,7 +9,7 @@ import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
 import Json.Decode as Decode
-import Json.Encode as Encode
+import Json.Encode as Encode exposing (Value)
 import Markdown
 import Model exposing (Model)
 import Msg exposing (Msg(..))
@@ -27,6 +27,19 @@ init flags =
     ( Model.default
     , Api.getStudies GotStudies
     )
+
+
+
+-- Ports
+
+
+port clickedSubmitAnalysis : () -> Cmd msg
+
+
+port receivedAnalysis : ( Value, String ) -> Cmd msg
+
+
+port receivedError : String -> Cmd msg
 
 
 
@@ -175,19 +188,45 @@ update msg ({ configInProgress } as model) =
             { model | configInProgress = configInProgress |> Config.removeGene gene }
                 |> withCmdNone
 
-        ClickedSubmit config ->
-            case model.analysisRemote of
-                NotAsked ->
-                    { model | analysisRemote = Loading } |> withCmd (Api.submitAnalysis config GotAnalysis)
+        ClickedSubmitAnalysis ->
+            case ( model.analysisRemote, Config.validate model.configInProgress ) of
+                ( NotAsked, Just config ) ->
+                    { model | analysisRemote = Loading }
+                        |> withCmd
+                            (Cmd.batch
+                                [ Api.submitAnalysis config GotAnalysis
+                                , clickedSubmitAnalysis ()
+                                ]
+                            )
 
-                Failure _ ->
-                    { model | analysisRemote = Loading } |> withCmd (Api.submitAnalysis config GotAnalysis)
+                ( Failure _, Just config ) ->
+                    { model | analysisRemote = Loading }
+                        |> withCmd
+                            (Cmd.batch
+                                [ Api.submitAnalysis config GotAnalysis
+                                , clickedSubmitAnalysis ()
+                                ]
+                            )
 
                 _ ->
                     model |> withCmdNone
 
-        GotAnalysis config analysis ->
-            { model | analysisRemote = analysis } |> withCmdNone
+        GotAnalysis config remote ->
+            case remote of
+                Success analysisString ->
+                    { model | analysisRemote = remote }
+                        |> withCmd (receivedAnalysis ( Config.encodeMeta config, analysisString ))
+
+                Failure e ->
+                    { model | analysisRemote = remote }
+                        |> withCmd (receivedError (RemoteData.errorString e ++ " Refresh the page and try again, and let us know if it persists."))
+
+                _ ->
+                    { model | analysisRemote = remote }
+                        |> withCmdNone
+
+        ClosedAnalysisModal _ ->
+            { model | showAnalysisModal = False, analysisRemote = NotAsked } |> withCmdNone
 
         NoOp ->
             model |> withCmdNone

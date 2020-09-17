@@ -20,7 +20,8 @@ type alias Model =
     , inputGeneRemote : RemoteData Gene.Results
     , inputGeneRemoteShow : Bool
     , configInProgress : Config.InProgress
-    , analysisRemote : RemoteData Analysis
+    , analysisRemote : RemoteData String
+    , showAnalysisModal : Bool
     }
 
 
@@ -34,4 +35,5 @@ default =
     , inputGeneRemoteShow = False
     , configInProgress = Config.default
     , analysisRemote = NotAsked
+    , showAnalysisModal = False
     }

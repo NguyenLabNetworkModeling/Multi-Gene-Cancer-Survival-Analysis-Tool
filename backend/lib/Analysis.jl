@@ -10,8 +10,8 @@ function load_clinical_subset(config, clinical_data, survival_meta)
     study_id = config["study_id"]
     subset = clinical_data[(clinical_data.STUDY_ID.==study_id), :]
     meta = survival_meta[survival_meta.ID.==study_id, ["SURVIVAL_OUTCOME", "SURVIVAL_TIME_UNIT"]]
-    outcome = meta[1]
-    time_unit = meta[2]
+    outcome = meta[1][1]
+    time_unit = meta[2][1]
     return (subset, outcome, time_unit)
 end
 

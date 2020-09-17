@@ -85,14 +85,10 @@ checkGene hugo callback =
         }
 
 
-submitAnalysis : Config -> (Config -> RemoteData Analysis -> msg) -> Cmd msg
+submitAnalysis : Config -> (Config -> RemoteData String -> msg) -> Cmd msg
 submitAnalysis config callback =
-    Cmd.none
-
-
-
-{-
-   Http.post
-       { url = endpointToUrl (SubmitAnalysis config)
-       , expect = Http.expectJson (An)}
--}
+    Http.post
+        { url = endpointToUrl (SubmitAnalysis config)
+        , body = Http.jsonBody (Config.encode config)
+        , expect = Http.expectString (RemoteData.fromResult >> callback config)
+        }
