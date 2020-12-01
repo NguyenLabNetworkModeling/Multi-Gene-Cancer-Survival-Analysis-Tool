@@ -1,1 +1,0 @@
-# Multi-Gene Survival Tool
