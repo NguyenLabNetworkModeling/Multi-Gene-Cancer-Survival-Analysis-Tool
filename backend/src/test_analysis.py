@@ -38,13 +38,13 @@ class TestAnalysis(unittest.TestCase):
         )
         self.test_thresholds = [
             {
-                "entrez": 672,
+                "gene": {"entrez": 672},
                 "threshold": 0.7,
                 "direction": "above",
                 "control": "complement",
             },
             {
-                "entrez": 675,
+                "gene": {"entrez": 675},
                 "threshold": 0.4,
                 "direction": "below",
                 "control": "mirrored",

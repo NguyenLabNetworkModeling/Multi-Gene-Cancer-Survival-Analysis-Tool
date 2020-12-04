@@ -67,7 +67,7 @@ def apply_thresholds(expression: pd.DataFrame, thresholds: List) -> pd.Series:
         expression (pd.DataFrame): mrna expression data
         thresholds (float): thresholds to apply. This should be a list of dicts
             where each dict has the following keys:
-            - entrez (int): the entrez ID of the gene
+            - gene which is a dict with entrez (int): the entrez ID of the gene
             - threshold (float) the threshold (test does not include threshold
               value).
             - direction (str): one of "above" or "below" specifying direction
@@ -98,7 +98,7 @@ def apply_thresholds(expression: pd.DataFrame, thresholds: List) -> pd.Series:
     percentiles = expression.rank(pct=True)
     for thresh in thresholds:
         group = allocate_group(
-            percentiles[thresh["entrez"]],
+            percentiles[thresh["gene"]["entrez"]],
             thresh["threshold"],
             thresh["direction"],
             thresh["control"],
@@ -120,13 +120,18 @@ def group_and_join(clinical, molecular, thresholds, outcome) -> pd.DataFrame:
         columns = [c for c in joined.columns if c not in ["dfs_months", "dfs_status"]]
         subset = joined[columns].copy()
         renamed = subset.rename(columns={"os_months": "months", "os_status": "status"})
+        renamed["months"] = renamed["months"].astype(float)
+        renamed["status"] = renamed["status"].astype(int)
     elif outcome == "dfs":
         columns = [c for c in joined.columns if c not in ["os_months", "os_status"]]
         subset = joined[columns].copy()
         renamed = subset.rename(
             columns={"dfs_months": "months", "dfs_status": "status"}
         )
+        renamed["months"] = renamed["months"].astype(float)
+        renamed["status"] = renamed["status"].astype(int)
     dropped = renamed.dropna()
+    dropped["group"] = dropped["group"].astype(int)
     return dropped
 
 
@@ -161,13 +166,13 @@ def perform(api: cbioportal.Api, config):
             "outcome_id": "os",
             "thresholds": [
                 {
-                    "entrez": 675,
+                    "gene": { "entrez": 675 },
                     "threshold": 0.7,
                     "direction": "above",
                     "control": "complement",
                 },
                 {
-                    "entrez": 5728,
+                    "gene": { "entrez": 5728 },
                     "threshold": 0.3,
                     "direction": "below",
                     "control": "mirrored",
@@ -185,7 +190,7 @@ def perform(api: cbioportal.Api, config):
     """
     outcome = config["outcome_id"]
     thresholds = config["thresholds"]
-    entrez = [t["entrez"] for t in thresholds]
+    entrez = [t["gene"]["entrez"] for t in thresholds]
 
     try:
         clinical = api.get_clinical_data(config["study_id"])
@@ -224,7 +229,7 @@ def perform(api: cbioportal.Api, config):
 
     def is_right_censor(row, df):
         "Determines if a row is right censored i.e. outcome is 0."
-        return "0" in df[df.months == row["timeline"]].status.values
+        return 0 in df[df.months == row["timeline"]].status.values
 
     test_kmf = KaplanMeierFitter()
     test_joined = joined[joined.group == 1]

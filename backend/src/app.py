@@ -22,7 +22,7 @@ def api_get_studies():
     return jsonify(api.get_studies())
 
 
-@app.route("/api/gene", methods=["GET"])
+@app.route("/api/genes", methods=["GET"])
 def api_get_gene():
     """Get a list of genes with a given prefix.
 
@@ -45,13 +45,13 @@ def api_analyse():
             "outcome_id": "os",
             "thresholds": [
                 {
-                    "entrez": 675,
+                    "gene": { "entrez": 675 },
                     "threshold": 0.7,
                     "direction": "above",
                     "control": "complement",
                 },
                 {
-                    "entrez": 5728,
+                    "gene": { "entrez": 5728 },
                     "threshold": 0.3,
                     "direction": "below",
                     "control": "mirrored",
