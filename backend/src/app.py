@@ -62,7 +62,7 @@ def api_analyse():
     config = request.get_json()
     result, error = analysis.perform(api, config)
     if error:
-        return jsonify(error, 500)
+        return jsonify(error)
     else:
         return jsonify(result)
 

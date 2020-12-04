@@ -130,9 +130,9 @@ def group_and_join(clinical, molecular, thresholds, outcome) -> pd.DataFrame:
         )
         renamed["months"] = renamed["months"].astype(float)
         renamed["status"] = renamed["status"].astype(int)
-    dropped = renamed.dropna()
-    dropped["group"] = dropped["group"].astype(int)
-    return dropped
+    renamed.dropna(inplace=True)
+    renamed["group"] = renamed["group"].astype(int)
+    return renamed
 
 
 def perform_cph(data, outcome):
