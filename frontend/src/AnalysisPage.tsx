@@ -5,12 +5,14 @@ import Select from 'react-select';
 import { ControlType, Gene, GeneConfig } from './Gene';
 import { MolecularProfile, OutcomeId, outcomeIdToString, OutcomeSpec, Study } from './Study';
 import AsyncSelect from 'react-select/async';
-import { AnalysisGeneConfig, AnalysisResult, getGenes, isValidAnalysisState, KMPoint, RemoteAnalysis } from './Api';
+import { AnalysisConfig, AnalysisGeneConfig, AnalysisResult, getGenes, isValidAnalysisState, KMPoint, RemoteAnalysis } from './Api';
 import { strictEqual } from 'assert';
 import { generateKeyPair } from 'crypto';
 import { defaultProps } from 'react-select/src/Select';
-import { ResponsiveContainer, LineChart, Line, ScatterChart, Scatter, XAxis, YAxis, CartesianGrid, Legend } from "recharts";
+import { Label, Scatter, ResponsiveContainer, Line, ComposedChart, LineChart, XAxis, YAxis, CartesianGrid, Legend } from "recharts";
 import { resultsAriaMessage } from 'react-select/src/accessibility';
+import fileDownload from "js-file-download";
+import domtoimage from "dom-to-image";
 
 /** Studies retrieved from the remote API and their laading + fail states. */
 export type RemoteStudies = "loading" | "failed" | Array<Study>
@@ -252,7 +254,7 @@ function geneConfigToComponents(config: AnalysisGeneConfig, group: "test" | "con
         ? config.threshold
         : (config.control == "complement" ? config.threshold : 1 - config.threshold);
 
-    return { gene: config.gene, comparer: comparer, threshold: threshold, group: group };
+    return { gene: config.gene, comparer: comparer, threshold: threshold.toFixed(2), group: group };
 
 }
 
@@ -305,7 +307,7 @@ function AnalysisCardBody(props: { remoteAnalysis: RemoteAnalysis}) {
                                     </tr>
                                     <tr className="font-mono pt-1">
                                         <td className="font-bold pr-1 text-left">p</td>
-                                        <td>{props.remoteAnalysis.result.p_value.toFixed(3)}</td>
+                                        <td>{props.remoteAnalysis.result.p_value.toFixed(3)}{props.remoteAnalysis.result.p_value < 0.05 ? "*" : ""}</td>
                                     </tr>
                                     <tr className="font-mono pt-1">
                                         <td className="font-bold pr-1 text-left">n_test</td>
@@ -324,7 +326,10 @@ function AnalysisCardBody(props: { remoteAnalysis: RemoteAnalysis}) {
 }
 
 /** View a single analysis card in batch view. */
-const AnalysisCard = React.memo((props: { remoteAnalysis: RemoteAnalysis, onDeleteAnalysis: (id: number) => void }) => {
+const AnalysisCard = React.memo((props: { 
+    remoteAnalysis: RemoteAnalysis,
+     onDeleteAnalysis: (id: number) => void,
+     onOpenAnalysisModal: (config: AnalysisConfig, result: AnalysisResult) => void }) => {
 
     function viewGene(config: AnalysisGeneConfig, group: "test" | "control") {
         const components = geneConfigToComponents(config, group);
@@ -338,15 +343,31 @@ const AnalysisCard = React.memo((props: { remoteAnalysis: RemoteAnalysis, onDele
         )
     }
 
+    var onClickCard;
     var addedClass;
     switch (props.remoteAnalysis.result) {
-        case "loading": addedClass = " border-t-2 border-gray-200"; break;
-        case "error": addedClass = " border-t-2 border-gray-300"; break;
-        default: addedClass = " border-t-2 border-blue-400"; break;
+        case "loading": {
+            addedClass = " border-t-2 border-gray-200"; 
+            onClickCard = (_: any) => {};
+            break;
+        }
+        case "error": {
+            addedClass = " border-t-2 border-gray-300"; 
+            onClickCard = (_: any) => {}
+            break;
+        }
+        default: {
+            addedClass = " border-t-2 border-blue-400 cursor-pointer"; 
+            const result = props.remoteAnalysis.result;
+            onClickCard = (_: any) => props.onOpenAnalysisModal(props.remoteAnalysis.config, result);
+        }
     }
     
     return (
-        <article className={"hover:shadow-lg transition-shadow cursor-pointer shadow bg-white h-72 rounded-bl rounded-br flex flex-col transition-colors" + addedClass}>
+        <article 
+            className={"hover:shadow-lg transition-shadow shadow bg-white h-72 rounded-bl rounded-br flex flex-col transition-colors" + addedClass}
+            onClick={onClickCard}
+        >
             <div className="border-b border-gray-100 p-2 2xl:p-3 2xl:px-4">
                 <div className="flex items-center">
                     <div className="text-sm mb-2 font-medium overflow-hidden h-4">{props.remoteAnalysis.config.study.name}</div>
@@ -371,12 +392,183 @@ const AnalysisCard = React.memo((props: { remoteAnalysis: RemoteAnalysis, onDele
     
 });
 
+function AnalysisCardModal(props: { state : AnalysisCardModalState, onCloseModal: () => void }) {
+
+    const colours = ["#60A5FA", "#9CA3AF"]; // test, control color
+
+    function onClickDownloadData(csv: string) {
+        const element = document.createElement("a");
+        const file = new Blob([csv], {type: 'text/plain'});
+        element.href = URL.createObjectURL(file);
+        element.download = "data.csv";
+        document.body.appendChild(element);
+        element.click();
+    }
+
+    function onClickDownloadImage() {
+        const node = document.getElementById("modal-plot");
+        if (node) {
+            domtoimage.toBlob(node).then(blob => fileDownload(blob, "plot.png"))
+        }
+    }
+
+    function renderLegend(localProps: any) {
+        const { payload } = localProps;
+        return (
+            <ul>
+                {payload.map((entry: any, index: any) => (
+                    index <= 1 
+                    ? <li key={`item-${index}`} style={{display: "flex", alignItems: "center"}}>
+                        <div style={{background: colours[index], width: "0.8rem", height: "0.8rem", borderRadius: "999px", marginRight: "8px"}}></div>
+                        {entry.value}
+                    </li> 
+                    : <li></li>
+                ))}
+                <li style={{marginTop: "5px"}}>HR={props.state?.result.hazard_ratio.toFixed(2)}, p={props.state?.result.p_value.toFixed(2)}</li>
+            </ul>
+        )
+    }
+
+    if (props.state) {
+
+        const testString = props.state.config.thresholds.map((c) => {
+            const comp = geneConfigToComponents(c, "test")
+            return comp.gene.hugo + comp.comparer + comp.threshold;
+        }).join(" & ");
+
+        const controlString = props.state.config.thresholds.map((c) => {
+            const comp = geneConfigToComponents(c, "control")
+            return comp.gene.hugo + comp.comparer + comp.threshold;
+        }).join(" & ");
+
+        const csvData = props.state.result.csv_data;
+        const configString = JSON.stringify(props.state.config);
+
+        return (
+            <div className="absolute inset-6 bg-white z-50 shadow-2xl p-4 2xl:p-8 border border-gray-200 rounded border-t-blue-500 flex flex-col overflow-auto" style={{borderTopColor: "#60A5FA"}}>
+                <div className="border-b border-gray-200 pb-8">
+                    <div className="flex items-center px-2">
+                        <div className="text-xl lg:text-2xl font-bold h-4">{props.state.config.study.name}</div>
+                        <button className="px-4 py-2 text-gray-300 rounded border-gray-300 ml-auto border text-xl hover:bg-blue-500 hover:border-blue-500 hover:text-white pb-3" 
+                            onClick={(_) => props.onCloseModal()}>Close</button>
+                    </div>
+                    <div className="font-mono text-sm text-gray-500 mt-2 px-2">
+                        {props.state.config.study_id}: {props.state.config.profile_id} + {props.state.config.outcome_id} + [{props.state.config.thresholds.map(c => c.gene.hugo).join(" + ")}]
+                    </div>
+                </div>
+                <div className="w-full flex-grow px-8 flex">
+                    <div className="flex items-center justify-center w-1/2 flex-col h-full bg-white p-4" id="modal-plot">
+                        <h1 className="text-lg font-bold text-center">Kaplan-Meier Estimate</h1>
+                        <div className="" style={{height: "60vh", width: "45vw"}}>
+                            <ResponsiveContainer>
+                                <ComposedChart margin={{left: 30, bottom: 30}}>
+                                    <XAxis type="number" dataKey="timeline" name="Time" unit={props.state.result.outcome_units}>
+                                        <Label value={"Time (" + props.state.result.outcome_units + ")"} position="insideBottom" offset={-20} />
+                                    </XAxis>
+                                    <YAxis type="number" dataKey={(x) => x.KM_estimate * 100} name="Event Probability" unit="%">
+                                        <Label value={outcomeIdToString(props.state.result.outcome) + " (%)"} angle={-90} position="insideLeft" offset={-10} />
+                                    </YAxis>
+                                    <Legend layout="vertical" align="right" verticalAlign="top" iconType="circle" content={renderLegend}/>
+                                    <Line name={testString} data={props.state.result.test_km_data} 
+                                        dataKey={(x) => x.KM_estimate * 100} type="stepAfter"
+                                        stroke={colours[0]}
+                                        strokeWidth={2}
+                                        dot={false}/>
+                                    <Line name={controlString} data={props.state.result.cont_km_data} 
+                                        dataKey={(x) => x.KM_estimate * 100} type="stepAfter" 
+                                        stroke={colours[1]}
+                                        strokeWidth={2}
+                                        dot={false}/>
+                                    <Scatter data={props.state.result.test_km_censors} dataKey={(x: KMPoint) => x.KM_estimate * 100} 
+                                        legendType="none"
+                                        shape="cross"
+                                        width={0.5}
+                                        fill={colours[0]}
+                                        isAnimationActive={false}
+                                    />
+                                    <Scatter data={props.state.result.cont_km_censors} dataKey={(x: KMPoint) => x.KM_estimate * 100}
+                                        shape="cross"
+                                        width={0.5}
+                                        fill={colours[1]}
+                                        isAnimationActive={false}
+                                        />
+                                </ComposedChart>
+                            </ResponsiveContainer>
+                        </div>
+                    </div>
+                    <div className="w-1/2 pt-8 pl-12 pr-0 2xl:pl-24 2xl:pr-4 pb-2 text-sm 2xl:text-base">
+                        <p>
+                            This plot shows a Kaplan-Meier survival curve for two groups of patients 
+                            from a study investigating <span className="font-medium">{props.state.config.study.name}</span> (study ID
+                            <span className="font-mono text-sm border px-2">{props.state.config.study.study_id}</span>). The outcome of interest was <span className="font-medium">{outcomeIdToString(props.state.config.outcome_id)}</span>.
+                            Each group was selected based on a combination of their percentiles within the study population for their expression of genes in the set {"{"}
+                            <span className="font-medium">{props.state.config.thresholds.map(c => c.gene.hugo).join(", ")}</span>{"}"} from <span className="font-medium">{props.state.config.profile.name}</span> data
+                            (profile ID <span className="font-mono text-sm border px-2">{props.state.config.profile.profile_id}</span>).
+                        </p>
+                        <p className="mt-3">
+                            The test group (shown in <span className="text-blue-500 font-medium">blue</span>) satisfied <span className="font-medium">all</span> of the following conditions: {testString}.
+                            The control group (shown in <span className="text-gray-500 font-medium">grey</span>) satisfied <span className="font-medium">all</span> of the following conditions: {controlString}.
+                        </p>
+                        <p className="mt-1">Each threshold above refers to percentiles (0.00 to 1.00) 
+                            relative to other patients in this study with available data. Any cases which did not fulfill either of the above criteria or had insufficient data were excluded.
+                        </p>
+                        <p className="mt-3">
+                            There were a total of {props.state.result.num_clinical} cases with clinical data available, of which {props.state.result.num_test} satisfied the test 
+                            criteria and {props.state.result.num_control} satisfied the control criteria. {props.state.result.num_excluded} cases were excluded. 
+                        </p>
+                        <p className="mt-3">
+                            The hazard ratio associated with the test group versus the control group was <span className="font-medium">{props.state.result.hazard_ratio.toFixed(3)}</span> with an 
+                            associated p-value of <span className="font-medium">{props.state.result.p_value.toFixed(4)}</span>.
+                        </p>
+                        <br className="mt-4"></br>
+                        <div className="flex flex-col">
+
+                        <button className="mt-2 px-2 py-1 rounded shadow hover:bg-blue-500 hover:text-white hover:shadow-lg transition-shadow border-gray-300 border hover:border-blue-500" 
+                        onClick={() => fileDownload(configString, "config.json")}>Download Analysis Configuration (JSON)</button>
+
+                        <button className="mt-2 px-2 py-1 rounded shadow hover:bg-blue-500 hover:text-white hover:shadow-lg transition-shadow border-gray-300 border hover:border-blue-500" 
+                        onClick={() => fileDownload(csvData, "data.csv")}>Download Clinical & Expression Data (CSV)</button>
+
+                        <button className="mt-2 px-2 py-1 rounded shadow hover:bg-blue-500 hover:text-white hover:shadow-lg transition-shadow border-gray-300 border hover:border-blue-500" 
+                        onClick={() => onClickDownloadImage()}>Download Plot (PNG)</button>
+
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        )
+    } else {
+        return <div></div>
+    }
+}
+
+/** The analysis card modal can be closed or contain a result. */
+type AnalysisCardModalState = null | { config : AnalysisConfig, result: AnalysisResult}
+
+const defaultModalState: AnalysisCardModalState = null;
+
 /** Analysis viewing container which contains all submitted analyses. */
 function AnalysisPanelContainer(props: { analyses: Array<RemoteAnalysis>, onDeleteAnalysis: (id: number) => void }) {
+
+    const [state, setState] = useState(defaultModalState);
+
+    function onOpenAnalysisModal(config: AnalysisConfig, result: AnalysisResult) {
+        setState((prev) => {
+            return { config: config, result: result }
+        })
+    }
+
+    function onCloseAnalysisModal() {
+        setState(null)
+    }
+
     return (
         <section className="p-8 grid gap-8 grid-cols-1 lg:grid-cols-2 xl:grid-cols-3">
-            {props.analyses.map((a: RemoteAnalysis) => 
-                <AnalysisCard remoteAnalysis={a} key={a.config.analysis_id} onDeleteAnalysis={props.onDeleteAnalysis} />)}
+            {props.analyses.map((a: RemoteAnalysis) => {
+                return <AnalysisCard remoteAnalysis={a} key={a.config.analysis_id} onDeleteAnalysis={props.onDeleteAnalysis} onOpenAnalysisModal={onOpenAnalysisModal} />
+            })}
+            <AnalysisCardModal state={state} onCloseModal={onCloseAnalysisModal} />
         </section>
     )
 }

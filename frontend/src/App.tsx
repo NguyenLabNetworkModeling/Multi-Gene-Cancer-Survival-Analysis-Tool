@@ -223,7 +223,7 @@ function App() {
       <header className="w-full shadow z-10 border-b border-gray-300">
         <Nav page={state.page} onClickPage={onClickPage} />
       </header>
-      <section className="w-full z-0 flex-grow overflow-auto">
+      <section className="w-full flex-grow overflow-auto">
         <PageContent />
       </section>
     </main>
