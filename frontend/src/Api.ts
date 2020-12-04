@@ -1,8 +1,9 @@
 /** Contains all functions which interact with the backend API. */
 
+import { getSuggestedQuery } from "@testing-library/react";
 import { AnalysisState } from "./AnalysisPage";
 import { ControlType, convertGeneToBackendShape, Direction, Gene, GeneWithNumberEntrez } from "./Gene";
-import { OutcomeId, Study } from "./Study";
+import { MolecularProfile, OutcomeId, OutcomeSpec, Study } from "./Study";
 
 /** Base backend API url without a trailing slash. */
 const baseUrl = "http://127.0.0.1:5000"
@@ -43,8 +44,11 @@ export type AnalysisGeneConfig = {
 export type AnalysisConfig = {
     analysis_id: number,
     study_id: string,
+    study: Study,
     profile_id: string,
+    profile: MolecularProfile,
     outcome_id: OutcomeId,
+    outcome: OutcomeSpec,
     thresholds: Array<AnalysisGeneConfig>
 }
 
@@ -84,8 +88,11 @@ export function parseAnalyisState(analysisId: number, state: AnalysisState): nul
         return {
             analysis_id: analysisId,
             study_id: study_id,
+            study: state.selectedStudy,
             profile_id: profile_id,
+            profile: state.selectedProfile,
             outcome_id: outcome_id,
+            outcome: state.selectedOutcome,
             thresholds: thresholds
         }
 
@@ -119,10 +126,32 @@ export type AnalysisResult = {
     "csv_data": string,
 }
 
-/** Send an analysis to the backend. */
+/** Send an analysis to the backend.
+ * If there is a key "message" in the response, then it indicates an error and is funneled towards the failure state.
+ */
 export function postAnalysis(config: AnalysisConfig, onSuccess: (_: AnalysisResult) => void, onFailure: (id: number, s: string) => void) {
     const url = baseUrl + "/api/analyse";
-    fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(config) })
-        .then((res) => { if (res.ok) { res.json().then((json) => onSuccess(json)) } else { res.json().then((json) => onFailure(config.analysis_id, json)) } })
-        .catch((e) => onFailure(config.analysis_id, "Uncaught error."))
+    const postData = JSON.stringify({
+        analysis_id: config.analysis_id,
+        study_id: config.study_id,
+        profile_id: config.profile_id,
+        outcome_id: config.outcome_id,
+        thresholds: config.thresholds,
+    });
+    fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: postData })
+        .then((res) => {
+            if (res.ok) {
+                res.json().then((json: { message: string } | AnalysisResult) => {
+                    console.log(json);
+                    if ("message" in json) {
+                        onFailure(config.analysis_id, json.message);
+                    } else {
+                        onSuccess(json);
+                    }
+                })
+            } else {
+                onFailure(config.analysis_id, "!res.ok");
+            }
+        })
+        .catch((e) => onFailure(config.analysis_id, "Uncaught error. Check your network connection and if this problem persists, let us know."))
 }

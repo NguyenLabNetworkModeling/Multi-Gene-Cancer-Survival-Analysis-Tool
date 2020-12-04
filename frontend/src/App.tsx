@@ -19,7 +19,7 @@ type State = {
   page: Page,
   analysisState: AnalysisState,
   currentAnalysisNumber: number,
-  analyses: Record<number, RemoteAnalysis>
+  analyses: Array<RemoteAnalysis>
 }
 
 /** Default application state. */
@@ -27,7 +27,7 @@ const defaultState: State = {
   page: "home",
   analysisState: defaultAnalysisState,
   currentAnalysisNumber: 0,
-  analyses: {}
+  analyses: []
 }
 
 /** Top-level application run in the root div. */
@@ -137,21 +137,28 @@ function App() {
   /** Callback on successfully receiving an analysis. */
   function onAnalysisSuccess(result: AnalysisResult) {
     setState((prev) => {
-      console.log(result);
-      var newAnalyses: Record<number, RemoteAnalysis> = {};
-      Object.assign(newAnalyses, prev.analyses)
-      newAnalyses[result.analysis_id] = { config: prev.analyses[result.analysis_id].config, result: result };
-      return { ...prev, analyses: newAnalyses }
+      const resultIndex = prev.analyses.findIndex((c: RemoteAnalysis) => c.config.analysis_id == result.analysis_id);
+      if (resultIndex >= 0) {
+        var newAnalyses = [...prev.analyses];
+        newAnalyses[resultIndex].result = result;
+        return { ...prev, analyses: newAnalyses };
+      } else {
+        return prev;
+      }
     })
   }
 
   /** Callback on receiving a failed analysis.  */
   function onAnalysisFailure(analysisId: number, message: string) {
     setState((prev) => {
-      var newAnalyses: Record<number, RemoteAnalysis> = {};
-      Object.assign(newAnalyses, prev.analyses)
-      newAnalyses[analysisId] = { config: prev.analyses[analysisId].config, result: "error", message: message };
-      return { ...prev, analyses: newAnalyses }
+      const resultIndex = prev.analyses.findIndex((c: RemoteAnalysis) => c.config.analysis_id == analysisId);
+      if (resultIndex >= 0) {
+        var newAnalyses = [...prev.analyses];
+        newAnalyses[resultIndex] = { config: newAnalyses[resultIndex].config, result: "error", message: message };
+        return { ...prev, analyses: newAnalyses }
+      } else {
+        return prev;
+      }
     })
   }
 
@@ -164,15 +171,19 @@ function App() {
 
       if (parsedConfig) {
         postAnalysis(parsedConfig, onAnalysisSuccess, onAnalysisFailure);
-
-        var newAnalyses: Record<number, RemoteAnalysis> = {};
-        Object.assign(newAnalyses, prev.analyses);
-        newAnalyses[prev.currentAnalysisNumber] = { config: parsedConfig, result: "loading" };
-
-        return { ...prev, analyses: newAnalyses, currentAnalysisNumber: prev.currentAnalysisNumber + 1 }
+        const newItem: RemoteAnalysis = { config: parsedConfig, result: "loading" }
+        return { ...prev, analyses: [...prev.analyses, newItem], currentAnalysisNumber: prev.currentAnalysisNumber + 1 }
       } else {
         return prev;
       }
+    })
+  }
+
+  /** Callback on deleting an analysis. */
+  function onDeleteAnalysis(analysisId: number) {
+    setState((prev) => {
+      const newAnalyses = prev.analyses.filter(a => a.config.analysis_id != analysisId);
+      return { ...prev, analyses: newAnalyses };
     })
   }
 
@@ -197,6 +208,8 @@ function App() {
           onChangeGeneThreshold={onChangeGeneThreshold}
           onChangeGeneControlType={onChangeGeneControlType}
           onClickSubmitAnalysis={onClickSubmitAnalysis}
+          analyses={state.analyses}
+          onDeleteAnalysis={onDeleteAnalysis}
         />
       case "guide":
         return <GuidePage />

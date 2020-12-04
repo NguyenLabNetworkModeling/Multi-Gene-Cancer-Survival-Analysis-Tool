@@ -5,9 +5,12 @@ import Select from 'react-select';
 import { ControlType, Gene, GeneConfig } from './Gene';
 import { MolecularProfile, OutcomeId, outcomeIdToString, OutcomeSpec, Study } from './Study';
 import AsyncSelect from 'react-select/async';
-import { AnalysisResult, getGenes, isValidAnalysisState } from './Api';
+import { AnalysisGeneConfig, AnalysisResult, getGenes, isValidAnalysisState, KMPoint, RemoteAnalysis } from './Api';
 import { strictEqual } from 'assert';
 import { generateKeyPair } from 'crypto';
+import { defaultProps } from 'react-select/src/Select';
+import { ResponsiveContainer, LineChart, Line, ScatterChart, Scatter, XAxis, YAxis, CartesianGrid, Legend } from "recharts";
+import { resultsAriaMessage } from 'react-select/src/accessibility';
 
 /** Studies retrieved from the remote API and their laading + fail states. */
 export type RemoteStudies = "loading" | "failed" | Array<Study>
@@ -237,11 +240,143 @@ function CreationSidebar(props: CreationSidebarProps) {
 
 }
 
-/** Analysis viewing container which contains all submitted analyses. */
-function AnalysisPanelContainer() {
-    return (
-        <section>
+/** Transform a gene config object into components of an information string based on group. */
+function geneConfigToComponents(config: AnalysisGeneConfig, group: "test" | "control") {
+    const comparer = group == "test"
+        ? (config.direction == "above" ? ">" : "<")
+        : (config.control == "complement"
+            ? (config.direction == "above" ? "≤" : "≥")
+            : (config.direction == "above" ? "<" : ">"));
 
+    const threshold = group == "test"
+        ? config.threshold
+        : (config.control == "complement" ? config.threshold : 1 - config.threshold);
+
+    return { gene: config.gene, comparer: comparer, threshold: threshold, group: group };
+
+}
+
+/** Body of each single analysis card */
+function AnalysisCardBody(props: { remoteAnalysis: RemoteAnalysis}) {
+    switch (props.remoteAnalysis.result) {
+            case "loading": {
+                return (
+                    <div className="p-2 text-sm text-gray-700 flex justify-center items-center h-full text-center font-medium">
+                        Loading...
+                    </div>
+                )
+            }
+            case "error": {
+                return (
+                        <div className="p-2 text-sm text-red-500 flex justify-center items-center h-full text-center font-medium">
+                            Whoops, that didn't work: {props.remoteAnalysis.message}
+                        </div>
+                )
+            }
+            default: {
+                return (
+                        <div className="flex h-full">
+                            <div className="p-2 pl-2 flex-grow flex justify-center items-center">
+                                <div className="text-xs h-24 w-24 2xl:h-36 2xl:w-48 border-b border-l border-gray-500">
+                                    <ResponsiveContainer>
+                                        <LineChart margin={{ top: 0, right: 0, bottom: 0, left: 0}}>
+                                            <XAxis type="number" dataKey="timeline" name="Time" unit={props.remoteAnalysis.result.outcome_units} hide/>
+                                            <YAxis type="number" dataKey="KM_estimate" name="Survival Estimate" hide/>
+                                            <Line name="Test" data={props.remoteAnalysis.result.test_km_data} 
+                                                dataKey="KM_estimate" type="stepAfter"
+                                                stroke="#2563EB" 
+                                                isAnimationActive={false} dot={false}/>
+                                            <Line name="Control" data={props.remoteAnalysis.result.cont_km_data} 
+                                                dataKey={(x: KMPoint) => x.KM_estimate} type="stepAfter" 
+                                                stroke="#6B7280"
+                                                isAnimationActive={false} dot={false}/>
+                                        </LineChart>
+                                    </ResponsiveContainer>
+                                </div>
+                            </div>
+                            <div className="text-xs pr-4 flex items-center justify-center">
+                                <table className="text-right">
+                                    <tr className="text-center border-b border-gray-300">
+                                        <td colSpan={2} className="font-medium" >{outcomeIdToString(props.remoteAnalysis.config.outcome_id)}</td>
+                                    </tr>
+                                    <tr className="font-mono pt-1">
+                                        <td className="font-bold pr-1 text-left">HR</td>
+                                        <td>{props.remoteAnalysis.result.hazard_ratio.toFixed(2)}</td>
+                                    </tr>
+                                    <tr className="font-mono pt-1">
+                                        <td className="font-bold pr-1 text-left">p</td>
+                                        <td>{props.remoteAnalysis.result.p_value.toFixed(3)}</td>
+                                    </tr>
+                                    <tr className="font-mono pt-1">
+                                        <td className="font-bold pr-1 text-left">n_test</td>
+                                        <td>{props.remoteAnalysis.result.num_test}</td>
+                                    </tr>
+                                    <tr className="font-mono pt-1">
+                                        <td className="font-bold pr-1 text-left">n_control</td>
+                                        <td>{props.remoteAnalysis.result.num_control}</td>
+                                    </tr>
+                                </table>
+                            </div>
+                        </div>
+                )
+            }
+        }
+}
+
+/** View a single analysis card in batch view. */
+const AnalysisCard = React.memo((props: { remoteAnalysis: RemoteAnalysis, onDeleteAnalysis: (id: number) => void }) => {
+
+    function viewGene(config: AnalysisGeneConfig, group: "test" | "control") {
+        const components = geneConfigToComponents(config, group);
+        const textColor = config.direction == "above" ? (group == "test" ? " text-pink-700" : " text-purple-700") : (group == "test" ? " text-purple-700" : " text-pink-700");
+        return (
+            <div className={"flex mr-1" + textColor}>
+                <div className="text-xs border px-1 font-medium">{config.gene.hugo}</div>
+                <div>{components.comparer}</div>
+                <div className="">{components.threshold}</div>
+            </div>
+        )
+    }
+
+    var addedClass;
+    switch (props.remoteAnalysis.result) {
+        case "loading": addedClass = " border-t-2 border-gray-200"; break;
+        case "error": addedClass = " border-t-2 border-gray-300"; break;
+        default: addedClass = " border-t-2 border-blue-400"; break;
+    }
+    
+    return (
+        <article className={"hover:shadow-lg transition-shadow cursor-pointer shadow bg-white h-72 rounded-bl rounded-br flex flex-col transition-colors" + addedClass}>
+            <div className="border-b border-gray-100 p-2 2xl:p-3 2xl:px-4">
+                <div className="flex items-center">
+                    <div className="text-sm mb-2 font-medium overflow-hidden h-4">{props.remoteAnalysis.config.study.name}</div>
+                    <button className="px-2 text-gray-300 rounded border-gray-300 ml-auto border text-normal hover:bg-red-500 hover:border-red-500 hover:text-white pb-1" 
+                        onClick={(_) => props.onDeleteAnalysis(props.remoteAnalysis.config.analysis_id)}>×</button>
+                </div>
+                <div className="flex text-xs mb-1">
+                    <div className=" mr-2 w-12 text-blue-500 font-medium ">Test:</div>
+                    <div className="flex flex-wrap">{props.remoteAnalysis.config.thresholds.map(g => viewGene(g, "test"))} </div>
+                </div>
+                <div className="flex text-xs">
+                    <div className="mr-2 w-12 font-medium text-gray-500">Control:</div>
+                    <div className="flex flex-wrap">{props.remoteAnalysis.config.thresholds.map(g => viewGene(g, "control"))}</div>
+                </div>
+            </div>
+            <div className="p-1 flex-grow">
+                <AnalysisCardBody remoteAnalysis={props.remoteAnalysis} />
+            </div>
+        </article>
+    )
+
+    
+});
+
+/** Analysis viewing container which contains all submitted analyses. */
+function AnalysisPanelContainer(props: { analyses: Array<RemoteAnalysis>, onDeleteAnalysis: (id: number) => void }) {
+    return (
+        <section className="p-8 grid gap-8 grid-cols-1 lg:grid-cols-2 xl:grid-cols-3">
+            {props.analyses.map((a: RemoteAnalysis) => 
+                <AnalysisCard remoteAnalysis={a} key={a.config.analysis_id} onDeleteAnalysis={props.onDeleteAnalysis} />)}
         </section>
     )
 }
@@ -275,13 +410,15 @@ type Props = {
     onChangeGeneThreshold: (gene: Gene, threshold: number) => void,
     onChangeGeneControlType: (gene: Gene) => void,
     onClickSubmitAnalysis: () => void,
+    analyses: Array<RemoteAnalysis>,
+    onDeleteAnalysis: (id: number) => void,
 }
 
 /** Main analysis page container. */
 function AnalysisPage(props: Props) {
     return (
         <div className="w-full flex h-full" >
-            <section className="shadow">
+            <section className="shadow-lg z-10">
                 <CreationSidebar
                     studies={props.analysisState.studies}
                     selectedStudy={props.analysisState.selectedStudy}
@@ -298,8 +435,8 @@ function AnalysisPage(props: Props) {
                     onClickSubmitAnalysis={props.onClickSubmitAnalysis}
                 />
             </section>
-            <section className="flex-grow">
-                <AnalysisPanelContainer />
+            <section className="flex-grow overflow-auto bg-gray-100">
+                <AnalysisPanelContainer analyses={props.analyses} onDeleteAnalysis={props.onDeleteAnalysis} />
             </section>
         </div>
     )
