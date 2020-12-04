@@ -44,6 +44,7 @@ function StudySelector(props: { studies: RemoteStudies, selectedStudy: null | St
             return (
                 <Select
                     options={props.studies}
+                    className="mt-1"
                     getOptionLabel={(s) => s.name}
                     getOptionValue={(s) => s.name}
                     placeholder="Select a study..."
@@ -66,28 +67,33 @@ function StudyInfo(props: {
 
     /** Convert an outcome to a displayable string with number of available cases. */
     function getOutcomeString(o: OutcomeSpec) {
-        return outcomeIdToString(o.outcome_id) + " (" + o.count + ")";
+        return outcomeIdToString(o.outcome_id) + " (" + o.count + " cases)";
     }
 
     if (props.selectedStudy) {
         return (
-            <div>
-                <article className="text-xs border-l border-gray-400 pl-4 my-2">
-                    {props.selectedStudy.description}
+            <div className="flex flex-col h-full pb-16">
+                <article className="uncontrolled text-xs border border-gray-200 p-2 my-2 overflow-auto flex-grow"
+                dangerouslySetInnerHTML={{__html: props.selectedStudy.description}}>
                 </article>
+                <label htmlFor="outcome-selector" className="text-xs">Select an outcome:</label>
                 <Select
                     options={props.selectedStudy.outcomes}
                     getOptionLabel={getOutcomeString}
                     getOptionValue={getOutcomeString}
                     value={props.selectedOutcome}
+                    className="mt-1"
+                    inputId="outcome-selector"
                     onChange={(opt, act) => { if (opt) { props.onSelectOutcome(opt) } }} />
+                <label htmlFor="profile-selector" className="text-xs mt-2">Select an expression profile:</label>
                 <Select
                     options={props.selectedStudy.molecular_profiles}
+                    className="mt-1"
                     getOptionLabel={(p) => p.name}
                     getOptionValue={(p) => p.name}
+                    inputId="profile-selector"
                     value={props.selectedProfile}
                     onChange={(opt, act) => { if (opt) { props.onSelectProfile(opt) } }} />
-
             </div>)
     } else {
         return (<div></div>)
@@ -102,6 +108,7 @@ function GeneSelector(props: { onSelectGenes: (gene: Array<Gene>) => void, selec
             getOptionValue={(s) => s.hugo}
             placeholder="Type at least two characters to search genes..."
             inputId="gene-selector"
+            className="mt-1"
             isMulti
             cacheOptions
             loadOptions={getGenes}
@@ -123,10 +130,11 @@ function SingleGeneConfigurator(props: {
     const geneConfig = props.geneConfigRecord[props.gene.hugo];
     const mirroredStyle = geneConfig.control == "mirrored" ? " bg-gray-400 text-white" : " border-gray-200 text-gray-500"
     return (
-        <div className="flex">
-            <div className="w-1/3">{props.gene.hugo}</div>
-            <button onClick={(_) => props.onChangeGeneControlType(props.gene)} className={"px-2 rounded text-xs" + mirroredStyle}>Mirrored Controls</button>
+        <div className="flex items-center py-2 border-b border-gray-200">
+            <div className="w-1/3 font-medium text-center flex items-center justify-center">{props.gene.hugo}</div>
             <GeneConfigSlider gene={props.gene} onChangeGeneThreshold={props.onChangeGeneThreshold} geneConfig={geneConfig} />
+            <button onClick={(_) => props.onChangeGeneControlType(props.gene)} 
+            className={"px-2 mt-1 py-1 text-xs border hover:bg-gray-200 hover:text-gray-500 flex items-center ml-2 justify-center" + mirroredStyle}>⎅</button>
         </div>
     )
 }
@@ -136,8 +144,8 @@ function SingleGeneConfigurator(props: {
 /** Slider to control gene threshold for each gene. */
 function GeneConfigSlider(props: { onChangeGeneThreshold: (gene: Gene, thres: number) => void, gene: Gene, geneConfig: GeneConfig }) {
     const [state, setState] = useState({ threshold: props.geneConfig.threshold, direction: props.geneConfig.direction });
-    const controlClass = " bg-gray-300";
-    const testClass = " bg-blue-500";
+    const controlClass = " bg-gray-300 border-gray-300";
+    const testClass = " bg-blue-500 border-blue-500";
     var middleSegmentLeft = 0, rightSegmentLeft = 0, leftSegmentWidth = 0, middleSegmentWidth = 0, rightSegmentWidth = 0;
     var leftSegmentClass = "", rightSegmentClass = "";
     if (props.geneConfig.control == "mirrored") {
@@ -184,20 +192,22 @@ function GeneConfigSlider(props: { onChangeGeneThreshold: (gene: Gene, thres: nu
     }
 
     return (
-        <div className="flex">
+        <div className="flex items-center">
             <div className="relative">
-                <div style={{ width: pct(leftSegmentWidth), left: pct(0), zIndex: -10 }} className={"pointer-events-none absolute" + leftSegmentClass}>&nbsp;</div>
-                <div style={{ width: pct(middleSegmentWidth), left: pct(middleSegmentLeft), zIndex: -10 }} className={"pointer-events-none absolute"}>&nbsp;</div>
-                <div style={{ width: pct(rightSegmentWidth), left: pct(rightSegmentLeft), zIndex: -10 }} className={"pointer-events-none absolute" + rightSegmentClass}>&nbsp;</div>
+                <div style={{ width: pct(leftSegmentWidth), left: pct(0), zIndex: -10 }} className={"pointer-events-none absolute border" + leftSegmentClass}>&nbsp;</div>
+                <div style={{ width: pct(middleSegmentWidth), left: pct(middleSegmentLeft), zIndex: -10 }} className={"pointer-events-none absolute border border-gray-300"}>&nbsp;</div>
+                <div style={{ width: pct(rightSegmentWidth), left: pct(rightSegmentLeft), zIndex: -10 }} className={"pointer-events-none absolute border" + rightSegmentClass}>&nbsp;</div>
                 <input type="range" min="0" max="100"
-                    className="z-30"
+                    className="z-30 m-0 p-0 w-36"
                     onInput={(e) => onInput(parseFloat(e.currentTarget.value))}
                     value={state.threshold}
                     onMouseUp={(e) => props.onChangeGeneThreshold(props.gene, state.threshold)} />
             </div>
             <input
-                type="number" value={state.threshold} className="w-12 px-1"
-                onInput={(e) => onInput(parseFloat(e.currentTarget.value))} />
+                type="number" value={state.threshold} className="w-12 px-1 pl-2 border ml-2 text-right"
+                key={props.gene.hugo + "-number-input"}
+                onInput={(e) => onInput(parseFloat(e.currentTarget.value))}
+                onBlur={(e) => props.onChangeGeneThreshold(props.gene, parseFloat(e.target.value))} />
             <div>%</div>
         </div>
     )
@@ -206,7 +216,9 @@ function GeneConfigSlider(props: { onChangeGeneThreshold: (gene: Gene, thres: nu
 
 function SubmitButton(props: { onClickSubmit: () => void }) {
     return (
-        <button onClick={props.onClickSubmit}>Submit Analysis</button>
+        <button onClick={props.onClickSubmit} 
+        className="p-2 hover:bg-blue-500 w-full text-center border rounded shadow transition-shadow hover:shadow-lg hover:text-white text-sm">
+            Submit Analysis</button>
     )
 }
 
@@ -216,27 +228,32 @@ function CreationSidebar(props: CreationSidebarProps) {
     const isValidToSubmit = (props.selectedStudy && props.selectedOutcome && props.selectedProfile && (props.selectedGenes.length > 0)) ? true : false;
 
     return (
-        <article className="p-2 w-96 text-sm">
-            <label htmlFor="study-selector">Select a Study:</label>
-            <StudySelector studies={props.studies}
-                onClickStudy={props.onClickStudy}
-                selectedStudy={props.selectedStudy} />
-            <StudyInfo selectedStudy={props.selectedStudy}
-                selectedOutcome={props.selectedOutcome}
-                selectedProfile={props.selectedProfile}
-                onSelectOutcome={props.onSelectOutcome}
-                onSelectProfile={props.onSelectProfile} />
-            <hr />
-            <GeneSelector onSelectGenes={props.onSelectGenes} selectedGenes={props.selectedGenes} />
-            <div>
-                {props.selectedGenes.map((gene) =>
-                    <SingleGeneConfigurator
-                        gene={gene} onChangeGeneThreshold={props.onChangeGeneThreshold}
-                        key={gene.hugo} geneConfigRecord={props.geneConfigRecord}
-                        onChangeGeneControlType={props.onChangeGeneControlType} />)}
+        <article className="p-2 2xl:p-4 w-96 text-xs xl:text-sm flex flex-col h-full overflow-auto">
+            <div style={{height: "50vh"}}>
+                <label htmlFor="study-selector" className="text-xs">Select a study:</label>
+                <StudySelector studies={props.studies}
+                    onClickStudy={props.onClickStudy}
+                    selectedStudy={props.selectedStudy} />
+                <StudyInfo selectedStudy={props.selectedStudy}
+                    selectedOutcome={props.selectedOutcome}
+                    selectedProfile={props.selectedProfile}
+                    onSelectOutcome={props.onSelectOutcome}
+                    onSelectProfile={props.onSelectProfile} />
             </div>
-            <hr />
-            { isValidToSubmit ? <SubmitButton onClickSubmit={props.onClickSubmitAnalysis} /> : <div></div>}
+            <div className="flex-grow pt-2">
+                <label htmlFor="gene-selector" className="text-xs">Select one or more genes:</label>
+                <GeneSelector onSelectGenes={props.onSelectGenes} selectedGenes={props.selectedGenes} />
+                <div className="mt-2">
+                    {props.selectedGenes.map((gene) =>
+                        <SingleGeneConfigurator
+                            gene={gene} onChangeGeneThreshold={props.onChangeGeneThreshold}
+                            key={gene.hugo} geneConfigRecord={props.geneConfigRecord}
+                            onChangeGeneControlType={props.onChangeGeneControlType} />)}
+                </div>
+            </div>
+            <div className="flex-end py-2">
+                { isValidToSubmit ? <SubmitButton onClickSubmit={props.onClickSubmitAnalysis} /> : <div className="text-gray-600 text-center p-2">Select a study and at least one gene.</div>}
+            </div>
         </article>
     )
 
@@ -263,14 +280,14 @@ function AnalysisCardBody(props: { remoteAnalysis: RemoteAnalysis}) {
     switch (props.remoteAnalysis.result) {
             case "loading": {
                 return (
-                    <div className="p-2 text-sm text-gray-700 flex justify-center items-center h-full text-center font-medium">
+                    <div className="p-4 pb-8 text-sm text-gray-700 flex justify-center items-center h-full text-center font-medium">
                         Loading...
                     </div>
                 )
             }
             case "error": {
                 return (
-                        <div className="p-2 text-sm text-red-500 flex justify-center items-center h-full text-center font-medium">
+                        <div className="p-4 pb-8 text-sm text-red-500 flex justify-center items-center h-full text-center font-medium">
                             Whoops, that didn't work: {props.remoteAnalysis.message}
                         </div>
                 )

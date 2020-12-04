@@ -1,3 +1,16 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+.uncontrolled a {
+    @apply text-blue-600;
+}
+
+.uncontrolled p {
+    @apply mt-2;
+}
+
+input[type='range']::-webkit-slider-runnable-track {
+    -webkit-appearance: none;
+    color: transparent;
+}

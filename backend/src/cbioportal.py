@@ -31,7 +31,7 @@ class Api(object):
 
     def __init__(self):
         self.client = SwaggerClient.from_url("https://www.cbioportal.org/api/api-docs")
-        self.engine = create_engine("sqlite:///../data/data.db")
+        self.engine = create_engine("sqlite:///./data/data.db")
         self.clinical_attributes = [
             "OS_STATUS",
             "OS_MONTHS",

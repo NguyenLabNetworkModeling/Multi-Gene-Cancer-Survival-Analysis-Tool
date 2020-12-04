@@ -1,5 +1,5 @@
-import cbioportal
-import analysis
+import src.cbioportal as cbioportal
+import src.analysis as analysis
 import json
 from flask import Flask, jsonify, request, g, send_from_directory
 from flask_cors import CORS
@@ -10,10 +10,13 @@ app = Flask(__name__)
 CORS(app)
 
 
-@app.route("/")
+@app.route("/", methods=["GET"])
 def index():
-    # TODO
-    return None
+    return send_from_directory('./build', 'index.html')
+
+@app.route("/build/<path:filename>")
+def send_file(filename):
+    return send_from_directory("./build", filename)
 
 
 @app.route("/api/studies", methods=["GET"])

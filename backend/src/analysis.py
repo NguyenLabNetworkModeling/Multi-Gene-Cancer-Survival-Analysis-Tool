@@ -16,7 +16,7 @@ The key steps to performing the analysis are:
 
 import pandas as pd
 import numpy as np
-import cbioportal
+import src.cbioportal as cbioportal
 from typing import List
 from lifelines import CoxPHFitter, KaplanMeierFitter
 
@@ -120,17 +120,15 @@ def group_and_join(clinical, molecular, thresholds, outcome) -> pd.DataFrame:
         columns = [c for c in joined.columns if c not in ["dfs_months", "dfs_status"]]
         subset = joined[columns].copy()
         renamed = subset.rename(columns={"os_months": "months", "os_status": "status"})
-        renamed["months"] = renamed["months"].astype(float)
-        renamed["status"] = renamed["status"].astype(int)
     elif outcome == "dfs":
         columns = [c for c in joined.columns if c not in ["os_months", "os_status"]]
         subset = joined[columns].copy()
         renamed = subset.rename(
             columns={"dfs_months": "months", "dfs_status": "status"}
         )
-        renamed["months"] = renamed["months"].astype(float)
-        renamed["status"] = renamed["status"].astype(int)
     renamed.dropna(inplace=True)
+    renamed["months"] = renamed["months"].astype(float)
+    renamed["status"] = renamed["status"].astype(float).astype(int)
     renamed["group"] = renamed["group"].astype(int)
     return renamed
 
