@@ -26,7 +26,7 @@ function HomePage() {
                      check out the <span className="font-bold">About</span> page or get in contact with the lab.
                 </p>
             </article>
-            <img src={homeIntroImage} className="shadow border mt-16 mb-4" />
+            <img src={homeIntroImage} className="shadow border mt-12 mb-4" />
             <div className="italic text-sm text-center w-full mb-8">Example of the analysis page.</div>
         </div>
     )

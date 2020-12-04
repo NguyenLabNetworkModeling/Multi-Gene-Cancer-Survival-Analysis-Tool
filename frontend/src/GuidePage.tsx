@@ -2,14 +2,16 @@ import React, { useState } from 'react';
 import step1 from "./resources/step1.png";
 import step2 from "./resources/step2.png";
 import step3 from "./resources/step3.png";
+import step45 from "./resources/step45.png";
+import step6 from "./resources/step6.png";
+
 
 function GuidePage() {
     return (
         <div className="max-w-5xl m-auto py-8 px-2" >
             <h1 className="text-4xl" >How-To Guide</h1>
             <article className="my-8 uncontrolled">
-                <p className="font-bold">This page is still in-progress.</p>
-                <p>Here's a labelled screenshot of the Analysis tab when you first click onto it. The first step is to select a cancer study from the drop-down menu.
+                <p>Here's a labelled screenshot of the <span className="font-bold">Analysis</span> tab when you first click onto it. The first step is to select a cancer study from the drop-down menu.
                 You can type in the select box to search the list of available studies.
                 </p>
                 <img src={step1} className="shadow m-8 border"></img>
@@ -33,6 +35,33 @@ function GuidePage() {
                     adding more than 2 or 3 genes or using stringent criteria as you will likely have an insufficient number of cases to perform any meaningful analysis.
                 </p>
                 <img src={step3} className="shadow m-8 border"></img>
+                <p>
+                    Once you have selected your genes and their thresholds, click on the Submit Analysis button below. It will only be visible if you
+                    have selected a study and at least one gene. Once you click the button, the analysis will be added to the right and will
+                    begin to load.
+                </p>
+                <p>
+                    After the analysis has finished loading, you will see a summary card of the analysis on the right. If the analysis was unsuccessful
+                    because of a network error, too few cases that fulfil the gene expression criteria, or because of failure to fit the survival analysis model,
+                    an error will be shown instead.
+                </p>
+                <img src={step45} className="shadow m-8 border"></img>
+                <p>
+                    You can <span className="font-bold">click</span> on the analysis summary card to open the analysis in more detail.
+                </p>
+                <img src={step6} className="shadow m-8 border"></img>
+                <p>
+                    In the detailed analysis view, a text description of the analysis and a Kaplan Meier plot is shown. You can download the configuration used for the
+                    analysis as JSON, which includes all the information you've specified to configure the analysis including the selected study, outcome, expression
+                    profile and gene thresholds. You can also download a CSV file containing the clinical and gene expression data (where genes are identified by their
+                    ENTREZ ID) as well as a PNG of the Kaplan Meier plot. We recommend keeping the JSON configuration file together with a downloaded CSV or PNG file
+                    in order to be able to replicate an analysis.
+                </p>
+                <p className="mb-8">
+                    Once you have finished reviewing the analysis details, you can close the modal by clicking the Close button at the top right.
+                </p>
+
+                <br></br>
             </article>
         </div>
     )
