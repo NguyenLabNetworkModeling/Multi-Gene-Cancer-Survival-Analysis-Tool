@@ -9,7 +9,7 @@ function AboutPage() {
                 <p>
                     Clinical data was retrieved from <a href="https://www.cbioportal.org/">cBioPortal</a> on 2nd December 2020
                     for all studies which had at least 40 cases with either Overall Survival or
-                    Disease-Free survival data recorded, and at least one mRNA expression profile available. When an analysis is submitted from to this online tool,
+                    Disease-Free survival data recorded, and at least one mRNA expression profile available. When an analysis is submitted to this online tool,
                     the backend retrieves gene expression data from cBioPortal for the selected genes on-demand and joins this with the cached clinical data.
                     The backend then converts the expression data for each gene into percentiles (relative to all cases with available data in the specified study) and
                     assigns each case to either the Test group or Control group, or excludes the case based on the gene thresholds submitted through this app.
