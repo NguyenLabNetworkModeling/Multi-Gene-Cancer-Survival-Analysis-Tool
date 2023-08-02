@@ -6,7 +6,7 @@ import { ControlType, convertGeneToBackendShape, Direction, Gene, GeneWithNumber
 import { MolecularProfile, OutcomeId, OutcomeSpec, Study } from "./Study";
 
 /** Base backend API url without a trailing slash. */
-const baseUrl = "."
+const baseUrl = "http://127.0.0.1:5000"
 
 /** Retrieve a list of all studies from the remote API. */
 export function getStudies(onSuccess: (studies: Array<Study>) => void, onFailure: () => void) {
